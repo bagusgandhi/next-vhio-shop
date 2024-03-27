@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  next-vhio-shop:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: next-vhio-shop
+    restart: unless-stopped
+    ports:
+      - 3004:3000
+    env_file:
+      - ./.env.production
+    networks:
+      - vhioshop
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+    networks:
+      - vhioshop
+
+networks:
+  vhioshop:
+    name: vhioshop
+
+volumes:
+  data:
