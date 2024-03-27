@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String    @db.VarChar(255) // varchar
+  email           String    @unique @db.VarChar(255) // email must be unique
+  emailVerifiedAt DateTime? // optional DateTime
+  emailVerifToken String?   @db.VarChar(255)
+  password        String?   @db.VarChar(255)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  provider        String    @default("cred-email-password")
+  Order           Order[]
+  Payment         Payment[]
+}
+
+model Product {
+  id           String         @id @default(cuid())
+  title        String         @db.VarChar(255)
+  price        Int
+  image        String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  OrderProduct OrderProduct[]
+}
+
+model OrderProduct {
+  id          String   @id @default(cuid())
+  product     Product  @relation(fields: [product_id], references: [id])
+  product_id  String
+  order       Order    @relation(fields: [order_id], references: [id])
+  order_id    String
+  total_price Int
+  qty         Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id           String         @id @default(cuid())
+  invoice      String
+  total        Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  OrderProduct OrderProduct[]
+  user         User           @relation(fields: [user_id], references: [id])
+  user_id      String
+  payment      Payment?
+}
+
+enum PaymentStatus {
+  unpaid
+  pending
+  failure
+  settlement
+  capture
+  expire
+  authorize
+  deny
+  cancel
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  gross_amount       String        @db.VarChar(255)
+  va_number          String        @db.VarChar(255)
+  bank               String        @db.VarChar(255)
+  transaction_id     String        @db.VarChar(255)
+  transaction_status PaymentStatus @default(pending)
+  transaction_time   DateTime
+  expiry_time        DateTime
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  invoice            String        @unique
+  order              Order         @relation(fields: [order_id], references: [id])
+  order_id           String        @unique
+  user               User          @relation(fields: [user_id], references: [id])
+  user_id            String
+}
